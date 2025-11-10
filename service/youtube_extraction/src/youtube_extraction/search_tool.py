@@ -55,13 +55,13 @@ def load_all_videos(youtuber: str = 'heyitsmindyy'):
 def prepare_search_index(parsed_data, chunk_size: int, chunk_step: int):
     
 
-    # needed = ['2SvN45DKWFg', 'KNR7lyrTThg', 'LGmXiNc-TCI', 'Nt_dYGI73RI']
-    needed = ['2SvN45DKWFg']
+    needed = ['2SvN45DKWFg', 'KNR7lyrTThg', 'LGmXiNc-TCI', 'Nt_dYGI73RI']
+    # needed = ['2SvN45DKWFg']
     sample = []
     for parsed in parsed_data:
         if parsed['video_id'] in needed:
             sample.append(parsed)
-    print(sample)
+    # print(sample)
     ###
 
     chunks = chunk_transcripts(sample, window_size=chunk_size, step_size=chunk_step, translate_or_not=True)
@@ -116,3 +116,11 @@ def prepare_search_tools(chunk_size: int, chunk_step: int, top_k: int):
         pickle.dump(search_tools, f)
 
     return search_tools
+
+
+if __name__ == '__main__':
+    prepare_search_tools(
+        chunk_size=15,
+        chunk_step=3,
+        top_k=5
+    )
