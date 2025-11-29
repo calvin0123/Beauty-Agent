@@ -5,6 +5,7 @@ from youtube_transcript_api.proxies import WebshareProxyConfig
 from googleapiclient.discovery import build
 from tqdm.auto import tqdm
 import os
+import json
 
 
 class YoutubeParser:
@@ -38,32 +39,42 @@ class YoutubeParser:
         Returns:
             List[str]: List of video IDs in the channel.
         """
-        channel_response = self.youtube.channels().list(
-            id=channel_id,
-            part="contentDetails"
-        ).execute()
+        channel_response = (
+            self.youtube.channels().list(id=channel_id, part="contentDetails").execute()
+        )
 
-        uploads_playlist_id = channel_response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+        uploads_playlist_id = channel_response["items"][0]["contentDetails"][
+            "relatedPlaylists"
+        ]["uploads"]
 
         videos = []
         next_page_token = None
 
         while True:
-            playlist_items = self.youtube.playlistItems().list(
-                playlistId=uploads_playlist_id,
-                part="contentDetails",
-                maxResults=50,
-                pageToken=next_page_token
-            ).execute()
+            playlist_items = (
+                self.youtube.playlistItems()
+                .list(
+                    playlistId=uploads_playlist_id,
+                    part="contentDetails",
+                    maxResults=50,
+                    pageToken=next_page_token,
+                )
+                .execute()
+            )
 
             for item in playlist_items["items"]:
-                videos.append(item["contentDetails"]["videoId"])
-
+                video_id = item["contentDetails"]["videoId"]
+                published_at = item["contentDetails"]["videoPublishedAt"]
+                videos.append({"videoId": video_id, "publishedAt": published_at})
             next_page_token = playlist_items.get("nextPageToken")
             if not next_page_token:
                 break
 
-        return videos
+        # sort by timestamp (descending) to get the latest
+        videos_sorted = sorted(videos, key=lambda v: v["publishedAt"], reverse=True)
+        latest_video = videos_sorted[0] if videos_sorted else None
+
+        return videos[:20]
 
     def save_video_ids(self, channel_id: str, filename: str = None) -> Path:
         """
@@ -94,11 +105,21 @@ class YoutubeParser:
             List[str]: List of video IDs.
         """
         filepath = self.data_dir / filename
+
         if not filepath.exists():
             raise FileNotFoundError(f"{filepath} does not exist")
-        return [line.strip() for line in filepath.read_text(encoding="utf-8").splitlines()]
 
-    def fetch_transcript(self, video_id: str) -> List[dict]:
+        if filename.endswith(".txt"):
+            return [
+                line.strip()
+                for line in filepath.read_text(encoding="utf-8").splitlines()
+            ]
+        elif filename.endswith(".json"):
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data
+
+    def _fetch_transcript(self, video_id: str) -> List[dict]:
         """
         Fetch the transcript of a YouTube video using multiple language fallbacks.
 
@@ -110,15 +131,15 @@ class YoutubeParser:
         """
         ytt_api = YouTubeTranscriptApi(
             proxy_config=WebshareProxyConfig(
-                proxy_username=os.environ['PROXY_USERNAME'],
-                proxy_password=os.environ['PROXY_PASSWORD'],
-                filter_ip_locations=["us", "de", "fr"]
+                proxy_username=os.environ["PROXY_USERNAME"],
+                proxy_password=os.environ["PROXY_PASSWORD"],
+                filter_ip_locations=["us", "de", "fr"],
             )
         )
-        transcript = ytt_api.fetch(video_id, languages=['zh-TW', 'ko', 'en'])
+        transcript = ytt_api.fetch(video_id, languages=["zh-TW", "ko", "en"])
         return transcript
 
-    def make_subtitles(self, transcript: List[dict]) -> str:
+    def _make_subtitles(self, transcript: List[dict]) -> str:
         """
         Convert a transcript list into subtitle text.
 
@@ -129,14 +150,16 @@ class YoutubeParser:
             str: Formatted subtitle text with timestamps.
         """
         lines = []
+
         for entry in transcript:
-            ts = self.format_timestamp(entry['start'])
-            text = entry['text'].replace('\n', ' ')
-            lines.append(f"{ts} {text}")
+            ts = self._format_timestamp(entry.start)
+            text = entry.text.replace("\n", " ")
+            lines.append(ts + " " + text)
+
         return "\n".join(lines)
 
     @staticmethod
-    def format_timestamp(seconds: float) -> str:
+    def _format_timestamp(seconds: float) -> str:
         """
         Convert seconds to timestamp string (H:MM:SS or M:SS).
 
@@ -149,6 +172,7 @@ class YoutubeParser:
         total_seconds = int(seconds)
         hours, remainder = divmod(total_seconds, 3600)
         minutes, secs = divmod(remainder, 60)
+
         if hours > 0:
             return f"{hours}:{minutes:02}:{secs:02}"
         else:
@@ -166,8 +190,8 @@ class YoutubeParser:
             print(f"{result_file} already exists, skipping it")
             return
 
-        transcript = self.fetch_transcript(video_id)
-        subtitles = self.make_subtitles(transcript)
+        transcript = self._fetch_transcript(video_id)
+        subtitles = self._make_subtitles(transcript)
         if subtitles:
             result_file.write_text(subtitles, encoding="utf-8")
             print(f"Saved subtitles to {result_file}")
