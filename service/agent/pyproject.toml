@@ -1,0 +1,18 @@
+[project]
+name = "agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Calvin Chen", email = "calvinchen0123@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "jaxn>=0.0.1",
+    "logfire>=4.14.2",
+    "pydantic-ai>=1.12.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.5,<0.9.0"]
+build-backend = "uv_build"
