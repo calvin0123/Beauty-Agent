@@ -457,7 +457,7 @@ class YoutuberTranscriptProcessor:
                 - "video_id": the video ID
                 - "transcript": the full transcript text
         """
-        filepath = self.raw_data_dir / f"{video_id}.txt"
+        filepath = self.raw_data_dir / f"transcript/{video_id}.txt"
         with open(filepath, "r") as f:
             transcript = f.read()
 
@@ -521,7 +521,7 @@ class YoutuberTranscriptProcessor:
 
             self.save_transcript(file_path, chunks)
 
-        # return chunks
+        return chunks
 
     def save_transcript(self, file_path, chunks):
         """
@@ -586,3 +586,13 @@ def youtuber_summarize(
     )
 
     return response.output[0].content[0].parsed
+
+
+if __name__ == '__main__':
+    ytp = YoutuberTranscriptProcessor()
+    videos = ['9QSmr_2EGXM']
+    for video in videos:
+        chunks = ytp.chunk_transcript(video_id=video)
+        # print(chunks[:4])
+    # transcript = ytp.load_transcript(video_id='9QSmr_2EGXM')
+    

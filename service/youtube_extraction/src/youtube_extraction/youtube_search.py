@@ -272,18 +272,19 @@ class YoutuberTranscriptSearcher:
         Index a list of transcript chunks into Elasticsearch, adding embeddings.
 
         Args:
-            chunks (list): List of transcript chunks (dicts) with keys 'title_zh', 'summary_zh', 'content', etc.
+            chunks (list): List of transcript chunks (dicts) with keys 'title_zh', 'content', etc.
         """
         for chunk in tqdm(chunks):
             text_to_embed = (
-                f"{chunk['title_zh']} {chunk['summary_zh']} {chunk['content']}"
+                # f"{chunk['title_zh']} {chunk['summary_zh']} {chunk['content']}"
+                f"{chunk['title_zh']} {chunk['content']}"
             )
             embedding = self.model.encode(text_to_embed).tolist()
             chunk["embedding"] = embedding
             self.es.index(index=self.index_name, document=chunk)
         self.es.indices.refresh(index=self.index_name)
 
-    def search_es(self, query_text, k=10):
+    def search_es(self, query_text, k=5):
         """
         Perform semantic search in Elasticsearch using a query.
 
@@ -314,9 +315,10 @@ class YoutuberTranscriptSearcher:
             {
                 "score": hit["_score"],
                 "video_id": hit["_source"]["video_id"],
-                "summary": hit["_source"]["summary"],
-                "summary_zh": hit["_source"]["summary_zh"],
+                # "summary": hit["_source"]["summary"],
+                # "summary_zh": hit["_source"]["summary_zh"],
                 "title": hit["_source"].get("title"),
+                "start_time": hit["_source"].get("start_time"),
                 "content": hit["_source"].get("content"),
             }
             for hit in response["hits"]["hits"]
@@ -369,3 +371,8 @@ class YoutuberTranscriptSearcher:
             return self.search_es(query_text, k)
         elif self.backend == "minsearch":
             return self.search_minsearch(query_text, num_results=k)
+
+
+if __name__ == '__main__':
+    yts = YoutuberTranscriptSearcher()
+    
