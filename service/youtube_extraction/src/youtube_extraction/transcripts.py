@@ -1,9 +1,12 @@
-
-
-from typing import Iterable, Dict    
+"""Previous version"""
+from typing import Iterable, Dict
 import re
 from deep_translator import GoogleTranslator
-from youtube_extraction.utils import (youtuber_summarize, YTSummaryResponse, translate_english)
+from youtube_extraction.utils import (
+    youtuber_summarize,
+    YTSummaryResponse,
+    translate_english,
+)
 
 
 def split_video_to_multiple_transcript(video):
@@ -14,17 +17,23 @@ def split_video_to_multiple_transcript(video):
     pattern = re.compile(r"(\d+:\d+)\s*(.*)")
     parsed = []
 
-    transcript = ''
+    transcript = ""
     for line in lines:
         match = pattern.match(line)
         if match:
             time_str, sentence = match.groups()
-            parsed.append({"youtuber": video["youtuber"], "video_id": video["video_id"], "time": time_str, "text": sentence.strip()})
+            parsed.append(
+                {
+                    "youtuber": video["youtuber"],
+                    "video_id": video["video_id"],
+                    "time": time_str,
+                    "text": sentence.strip(),
+                }
+            )
 
             transcript += sentence.strip()
-            transcript += ' '
+            transcript += " "
     return parsed, transcript
-
 
 
 def sliding_window(parsed, video_summary, window_size=10, step_size=5):
@@ -41,8 +50,8 @@ def sliding_window(parsed, video_summary, window_size=10, step_size=5):
         list[dict]: Overlapping transcript chunks.
     """
     chunks = []
-    video_id = parsed[0]['video_id']
-    youtuber = parsed[0]['youtuber']
+    video_id = parsed[0]["video_id"]
+    youtuber = parsed[0]["youtuber"]
     total = len(parsed)
     chunk_id = 1
 
@@ -55,19 +64,21 @@ def sliding_window(parsed, video_summary, window_size=10, step_size=5):
             break  # stop if not enough data left
 
         # Combine texts from the window
-        text_chunk = " ".join([entry['text'] for entry in window])
+        text_chunk = " ".join([entry["text"] for entry in window])
 
-        chunks.append({
-            'video_id': video_id,
-            'youtuber': youtuber,
-            'chunk_id': chunk_id,
-            'start_time': window[0]['time'],
-            'end_time': window[-1]['time'],
-            'content': text_chunk,
-            'title': video_summary.title_en,
-            'summary': video_summary.summary_en,
-            'category': video_summary.category.value,
-        })
+        chunks.append(
+            {
+                "video_id": video_id,
+                "youtuber": youtuber,
+                "chunk_id": chunk_id,
+                "start_time": window[0]["time"],
+                "end_time": window[-1]["time"],
+                "content": text_chunk,
+                "title": video_summary.title_en,
+                "summary": video_summary.summary_en,
+                "category": video_summary.category.value,
+            }
+        )
 
         chunk_id += 1
 
@@ -83,24 +94,24 @@ def chunk_transcripts(
     transcripts: Iterable[Dict[str, str]],
     window_size: int = 10,
     step_size: int = 5,
-    translate_or_not: bool = False
-    ):
+    translate_or_not: bool = False,
+):
     """
     Chunk transcript based on character length (~400 chars).
     """
-    
+
     results = []
 
     for video in transcripts:
         # provide trnascript
-        print(f'Processing... {video['video_id']}')
+        print(f"Processing... {video['video_id']}")
         split_transcript, transcript_str = split_video_to_multiple_transcript(video)
-        
+
         # summary
         video_summary = youtuber_summarize(
             # instructions=instructions,
             user_prompt=transcript_str,
-            output_format=YTSummaryResponse
+            output_format=YTSummaryResponse,
         )
 
         # start
@@ -108,13 +119,13 @@ def chunk_transcripts(
             parsed=split_transcript,
             video_summary=video_summary,
             window_size=window_size,
-            step_size=step_size
+            step_size=step_size,
         )
 
         if translate_or_not:
-            print('Tranlating...')
+            print("Tranlating...")
             for chunk in chunks:
-                chunk['content_eng'] = translate_english(chunk['content'])
+                chunk["content_eng"] = translate_english(chunk["content"])
 
         results.extend(chunks)
 
