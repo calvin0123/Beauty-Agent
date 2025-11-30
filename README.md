@@ -120,5 +120,6 @@ Consult individual service READMEs for additional context (custom arguments, hel
 - [Streamlit App!](https://drive.google.com/file/d/1V8-E122SjiPKTcOV9tjfqwKsU8BaqpuJ/view?usp=sharing)
 
 **Streamlit UI**
+
 <img src="./img/streamlit.png" width="400">
 <!-- ![Streamlit UI](./img/streamlit.png) -->
