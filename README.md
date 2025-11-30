@@ -1,6 +1,6 @@
 # Health / Beauty Agent
 
-Viewers often spend hours watching long YouTube beauty videos, manually searching for product names, recommendations, and whether the products are suitable for Asian skin tones or specific needs. This research process is slow, repetitive, and lacks a centralized, searchable source of truth.
+Viewers often spend hours watching long YouTube beauty videos, manually searching for product names, recommendations, and whether the products are suitable for Asian skin tones or specific needs. This research process is slow, repetitive, and lacks a centralized.
 
 Built a multilingual research assistant that ingests beauty YouTube videos, extracts structured product information, and creates a searchable knowledge base with grounded transcript citations.
 The agent can:
