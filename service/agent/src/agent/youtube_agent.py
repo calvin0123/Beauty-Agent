@@ -211,6 +211,8 @@ Final summary must be:
 - Based strictly on transcript evidence
 
 """
+
+
 class ProductDetails(BaseModel):
     name: str = Field(..., description="The name of the product.")
     start_time: str = Field(
@@ -286,7 +288,6 @@ class YoutubeSummaryOutput(BaseModel):
 
             print("======================")
 
-    
     def format_youtube_summary(self):
         """
         Print the YouTube video summary and all associated product details
@@ -296,7 +297,7 @@ class YoutubeSummaryOutput(BaseModel):
             result (YoutubeSummaryOutput): The output object containing video
                 and product information.
         """
-        output = ''
+        output = ""
         # output += "=== Youtube Beauty Search Output ==="
         for product in self.products:
             output += f"* Product: {product.name}\n"

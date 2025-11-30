@@ -7,6 +7,7 @@ from tqdm.auto import tqdm
 import os
 import json
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -19,7 +20,9 @@ class YoutubeParser:
         data_dir (Path): Directory to save video IDs and transcripts.
     """
 
-    def __init__(self, api_key: str, youtuber: str = 'heyitsmindy', data_dir: str = "data") -> None:
+    def __init__(
+        self, api_key: str, youtuber: str = "heyitsmindy", data_dir: str = "data"
+    ) -> None:
         """
         Initialize YoutubeParser with YouTube API key and data directory.
 
@@ -32,7 +35,9 @@ class YoutubeParser:
         self.data_dir.mkdir(exist_ok=True)
         self.youtuber = youtuber
 
-    def get_all_video_id(self, channel_id: str = 'UCYoNeJRnYGcReuBatFl83Cw') -> List[str]:
+    def get_all_video_id(
+        self, channel_id: str = "UCYoNeJRnYGcReuBatFl83Cw"
+    ) -> List[str]:
         """
         Retrieve all video IDs from a YouTube channel.
 
@@ -78,12 +83,12 @@ class YoutubeParser:
         latest_video = videos_sorted[0] if videos_sorted else None
 
         # save videos
-        file_dir = self.data_dir / f"{self.youtuber}" / 'videos'
+        file_dir = self.data_dir / f"{self.youtuber}" / "videos"
         file_dir.mkdir(exist_ok=True)
         filepath = os.path.join(file_dir, f"{self.youtuber}.json")
         with open(filepath, "w") as f:
             json.dump(videos_sorted[:20], f, indent=2)
-        
+
         return videos[:20]
 
     def save_video_ids(self, channel_id: str, filename: str = None) -> Path:
@@ -195,7 +200,7 @@ class YoutubeParser:
         Args:
             video_id (str): YouTube video ID.
         """
-        result_dir = self.data_dir / youtuber / 'transcript'
+        result_dir = self.data_dir / youtuber / "transcript"
         result_dir.mkdir(exist_ok=True)
         result_file = result_dir / f"{video_id}.txt"
         if result_file.exists():
@@ -211,7 +216,9 @@ class YoutubeParser:
         else:
             print(f"No subtitles for {video_id}, skipped.")
 
-    def download_all_transcripts(self, youtuber: str, video_ids: List[str] = None) -> None:
+    def download_all_transcripts(
+        self, youtuber: str, video_ids: List[str] = None
+    ) -> None:
         """
         Download transcripts for a list of video IDs.
 
@@ -220,19 +227,18 @@ class YoutubeParser:
         """
 
         if not video_ids:
-            print('Retrieving the new videos...')
+            print("Retrieving the new videos...")
             self.get_all_video_id()
-            filepath =  f"{youtuber}/videos/{youtuber}.json"
+            filepath = f"{youtuber}/videos/{youtuber}.json"
             video_ids = self.read_video_ids(filepath)
-
 
         for vid in tqdm(video_ids):
             try:
-                self.download(youtuber, vid['videoId'])
+                self.download(youtuber, vid["videoId"])
             except Exception as e:
                 print(f"Failed to download {youtuber}: {vid}: {e}")
 
 
-if __name__ == '__main__':
-    yp = YoutubeParser(api_key=os.environ['GOOGLE_API_KEY'])
-    yp.download_all_transcripts(youtuber='heyitsmindy')
+if __name__ == "__main__":
+    yp = YoutubeParser(api_key=os.environ["GOOGLE_API_KEY"])
+    yp.download_all_transcripts(youtuber="heyitsmindy")

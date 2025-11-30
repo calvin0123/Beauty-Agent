@@ -231,7 +231,8 @@ def youtuber_summarize_eng(user_prompt, output_format, model="gpt-4o-mini"):
 # -------------------------
 
 from typing import Iterable, Dict
-import re 
+import re
+
 
 def split_video_to_multiple_transcript(
     video: Dict[str, Any],
@@ -588,11 +589,10 @@ def youtuber_summarize(
     return response.output[0].content[0].parsed
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ytp = YoutuberTranscriptProcessor()
-    videos = ['9QSmr_2EGXM']
+    videos = ["9QSmr_2EGXM"]
     for video in videos:
         chunks = ytp.chunk_transcript(video_id=video)
         # print(chunks[:4])
     # transcript = ytp.load_transcript(video_id='9QSmr_2EGXM')
-    

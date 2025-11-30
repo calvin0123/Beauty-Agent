@@ -1,4 +1,5 @@
 """Previous version"""
+
 from typing import Iterable, Dict
 import re
 from deep_translator import GoogleTranslator

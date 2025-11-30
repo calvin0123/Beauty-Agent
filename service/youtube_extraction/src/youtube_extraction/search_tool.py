@@ -1,6 +1,7 @@
 """
 Previous version
 """
+
 from minsearch import Index
 from typing import Any, List, Dict
 from pathlib import Path

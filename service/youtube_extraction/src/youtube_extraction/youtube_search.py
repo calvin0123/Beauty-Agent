@@ -373,6 +373,5 @@ class YoutuberTranscriptSearcher:
             return self.search_minsearch(query_text, num_results=k)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     yts = YoutuberTranscriptSearcher()
-    
