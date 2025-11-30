@@ -1,4 +1,4 @@
-# Health / Beauty Agent
+# Beauty Agent
 
 Viewers often spend hours watching long YouTube beauty videos, manually searching for product names, recommendations, and whether the products are suitable for Asian skin tones or specific needs. This research process is slow, repetitive, and lacks a centralized.
 
@@ -69,7 +69,7 @@ All workflows are wrapped in the `Makefile` (each target uses `uv run …` so th
 | Command | What it does |
 | --- | --- |
 | `make run-get-videos` | Downloads recent videos + transcripts for the configured creator. Triggers ingestion pipeline prerequisites. |
-| `run-data-prep` | Automates the transcript ingestion for the configured creator. |
+| `make run-data-prep` | Automates the transcript ingestion for the configured creator. |
 | `make run-main` | Runs `main.py`, calling YouTube Agent once for a scripted prompt. |
 | `make run-terminal-app` | Launches the interactive CLI chatbot loop. |
 | `make run-streamlit-app` | Starts the Streamlit UI for browsing recommendations. |
