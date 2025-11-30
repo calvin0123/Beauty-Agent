@@ -1,6 +1,14 @@
 # Health / Beauty Agent
 
-Multilingual research assistant that ingests beauty YouTube videos, builds a searchable knowledge base, and answers product questions with grounded citations.
+Viewers often spend hours watching long YouTube beauty videos, manually searching for product names, recommendations, and whether the products are suitable for Asian skin tones or specific needs. This research process is slow, repetitive, and lacks a centralized, searchable source of truth.
+
+Built a multilingual research assistant that ingests beauty YouTube videos, extracts structured product information, and creates a searchable knowledge base with grounded transcript citations.
+The agent can:
+   - Retrieve relevant product mentions directly from the transcript
+   - Provide timestamps showing where the creator discussed each product
+   - Summarize why the creator recommends or does not recommend it
+   - Provide outputs in English or Chinese depending on the user’s query
+   - Dramatically reduce research time by delivering clear, evidence-based answers instantly
 
 ## Features
 - **Creator ingestion pipeline** – fetch YouTube uploads, download transcripts via Webshare proxies, summarize with OpenAI, and cache overlapping chunks for reuse.
