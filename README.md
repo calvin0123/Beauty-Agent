@@ -1,67 +1,116 @@
 # Health / Beauty Agent
 
-Multilingual research assistant that ingests beauty YouTube content, builds a searchable knowledge base, and answers product questions with citations.
+Multilingual research assistant that ingests beauty YouTube videos, builds a searchable knowledge base, and answers product questions with grounded citations.
 
-## Problem Statement
-- Beauty shoppers struggle to remember which products influencers actually recommend, in which order, and why.
-- Transcripts are long, often bilingual (Mandarin/English), and hard to query without rewatching an entire video.
-- Goal: ingest creator content, normalize the language, index it, and expose an agent that can search, cite, and recommend products in the user’s language.
+## Features
+- **Creator ingestion pipeline** – fetch YouTube uploads, download transcripts via Webshare proxies, summarize with OpenAI, and cache overlapping chunks for reuse.
+- **Clarify & retrieval agents** – a routing agent decides whether to fetch/index data, while the YouTube agent performs multilingual semantic search (Elasticsearch + SentenceTransformers) and returns product recommendations with timestamps.
+- **Interactive surfaces** – CLI loop (`terminal_chatbot.py`) and Streamlit UI (`app.py`) powered by shared agent logic.
+- **Evaluation harness** – generate golden answers, replay agent runs, and judge outputs with a rubric (instruction following, answer quality, citation faithfulness).
+- **Monitoring-ready** – logs are structured and monitored using `logfire`
 
-## Solution Highlights
-- **YouTube extraction (`service/youtube_extraction`)** – pulls channel videos, downloads transcripts, summarizes with LLMs, chunks with overlap, and stores cached JSON for fast reuse.
-- **Retrieval agent (`service/agent`)** – Clarify Agent decides whether to ingest or use cache, YouTube Agent runs multilingual search (Elasticsearch + embeddings) and returns structured product recs.
-- **Evaluation service (`service/evals`)** – builds ground-truth answers, replays the agent, and scores outputs against a checklist to tune prompts + retrieval.
-- **Apps & UI** – `terminal_chatbot.py` for a CLI loop and `app.py` (Streamlit) for a lightweight UI, both routed through `Makefile` targets.
+## Project Structure
+```
+health-agent/
+├── Makefile                     # Canonical entrypoints (uv run …)
+├── app.py / terminal_chatbot.py # Streamlit + CLI frontends
+├── main.py                      # Sample orchestration (YouTube agent with streaming output)
+├── service/
+│   ├── youtube_extraction/      # Data ingestion: parser, chunker, searcher
+│   ├── agent/                   # Clarify + YouTube agents
+│   └── evals/                   # Ground truth + judging pipelines
+├── data/                        # Transcripts, ground-truth CSVs, eval pickles
+├── .cache/                      # Chunked transcripts + search indexes
+└── notebooks/                   # Experiments and design notes
+```
+Each service also has its own README with deep dives into scripts, dependencies, and TODOs.
 
-See service-level READMEs for detailed scripts and run commands:
+## Environment Setup
+1. **Install uv** (if not already): see [uv repo](https://github.com/astral-sh/uv).
+2. **Sync dependencies**
+   ```bash
+   uv sync
+   ```
+3. **Create `.env` (or export vars)**
+   ```
+   export GOOGLE_API_KEY=...
+   export YOUTUBE_CHANNEL_ID=...
+   export OPENAI_API_KEY=...
+   export PROXY_USERNAME=...
+   export PROXY_PASSWORD=...
+   export WEBSHARE_HTTP=...   # optional for translation proxying
+   export WEBSHARE_HTTPS=...
+   LOGFIRE_TOKEN=...
+   ```
+4. **Start Elasticsearch** for semantic search:
+   ```bash
+   docker run -d \
+     --name elasticsearch \
+     -m 6g \
+     -p 9200:9200 \
+     -p 9300:9300 \
+     -e "discovery.type=single-node" \
+     -e "xpack.security.enabled=false" \
+     -v es9_data:/usr/share/elasticsearch/data \
+     docker.elastic.co/elasticsearch/elasticsearch:9.1.1
+   ```
 
-| Service | Description | README |
-| --- | --- | --- |
-| Data ingestion | YouTube parsing, chunking, search indexing | `service/youtube_extraction/README.md` |
-| Agents | Clarify + YouTube recommendation agents | `service/agent/README.md` |
-| Evals | Ground-truth + automated rubric judge | `service/evals/README.md` |
+## How to Run
+All workflows are wrapped in the `Makefile` (each target uses `uv run …` so the project environment is used automatically):
 
-## Demo & Deliverables
-- **Pitch/problem slide:** _add link or path here_
-- **Demo video:** _add recording link here_
-- **User research / notes:** keep in `service/youtube_extraction/Notes.md` or link above.
-
-## Quickstart
-1. Install dependencies with [uv](https://github.com/astral-sh/uv): `uv sync`
-2. Export required secrets (use your own `.env` file or the list below):
-   - `GOOGLE_API_KEY`, `YOUTUBE_CHANNEL_ID`
-   - `OPENAI_API_KEY`
-   - `PROXY_USERNAME` / `PROXY_PASSWORD` (Webshare transcripts)
-   - `WEBSHARE_HTTP`, `WEBSHARE_HTTPS` (optional translation proxy)
-3. Use the `Makefile` to run workflows:
-
-| Target | Purpose |
+| Command | What it does |
 | --- | --- |
-| `make run-get-videos` | Fetch latest videos + transcripts for the configured creator. |
-| `make run-terminal-app` | Launch interactive CLI loop (`terminal_chatbot.py`). |
-| `make run-streamlit-app` | Start the Streamlit UI (`app.py`). |
-| `make run-main` | Run `main.py` orchestration script end-to-end. |
-| `make run-ground-truth` | Regenerate golden answers for evals. |
-| `make run-ground-truth-evals` | Score agent responses against the checklist. |
+| `make run-get-videos` | Downloads recent videos + transcripts for the configured creator. Triggers ingestion pipeline prerequisites. |
+| `run-data-prep` | Automates the transcript ingestion for the configured creator. |
+| `make run-main` | Runs `main.py`, calling YouTube Agent once for a scripted prompt. |
+| `make run-terminal-app` | Launches the interactive CLI chatbot loop. |
+| `make run-streamlit-app` | Starts the Streamlit UI for browsing recommendations. |
+| `make run-ground-truth` | Generates golden answers for evaluation (writes to `data/ground_truth/*.bin`). |
+| `make run-ground-truth-evals` | Scores agent outputs against the rubric and prints pass rates. |
 
-Each target automatically prefixes commands with `uv run …`, so dependencies are isolated in the project environment.
+Consult individual service READMEs for additional context (custom arguments, helper scripts, etc.).
 
-## Data Flow
-1. `run-get-videos` downloads transcripts -> `.cache/<youtuber>_*` holds bilingual chunks.
-2. Clarify Agent checks cache status and (if needed) calls `YoutuberTranscriptProcessor.chunk_transcript`.
-3. YouTube Agent searches Elasticsearch/MinSearch using SentenceTransformers embeddings.
-4. Agents respond via CLI or Streamlit UI; logs feed into eval pipelines.
-5. Evals replay stored questions, compare to ground truth, and output pass/fail metrics.
+## Reproducing Results
+1. **Ingest data**
+   ```bash
+   make run-get-videos
+   ```
+   This populates `data/<creator>/transcript/*.txt` and `data/<creator>/videos/*.json`.
 
-## Open Questions & Learning Notes
-### Agent design (tracked for future research)
-1. Should every sub-agent own specialized tools, or should a simple toolset be orchestrated centrally for easier debugging in production?
-2. Retrieval freshness vs. latency: pre-built RAG indexes vs. live API calls — what works best for lean experiments?
-3. Multilingual handling: translate + index once, translate at query time, or store both Chinese + English chunks to unlock cross-lingual recall? (MinSearch currently misses pure Chinese text.)
+   ```bash
+   make run-chunk-videos
+   ```
+   This populates `.cache/<creator>_<window_size>_<step>/<creator>_<video_id>.json`.
+   
+2. **Verify Elasticsearch index** (only once per dataset)
+   ```python
+   from service.youtube_extraction.src.youtube_extraction.youtube_search import YoutuberTranscriptSearcher
+   searcher = YoutuberTranscriptSearcher(youtuber="heyitsmindy")
+   searcher.ensure_es_index()
+   ```
+   This creates the ElasticSearch Tool.
+3. **Generate ground truth**
+   ```bash
+   make run-ground-truth
+   ```
+   Produces `data/ground_truth/eval-run-<timestamp>.bin` containing saved agent answers + logs.
+4. **Run evaluations**
+   ```bash
+   make run-ground-truth-evals
+   ```
+   Outputs per-check accuracy so you can compare experiments (prompt tweaks, retrieval strategies, chunking changes).
 
-### Framework study plan
-- When picking up a new agent framework (e.g., PydanticAI), start with the docs for high-level concepts, then inspect the source for classes like `EventStreamHandler`, `RunResult`, `StreamResult`, `AgentRunResult`.
-- Use type hints and small instrumentation prints while running `terminal_chatbot.py` to see what attributes (e.g., `tool_name`, `args`, `ctx`) are exposed.
-- Tests and example scripts (see `service/evals/src/evals/`) double as living docs for acceptable inputs/outputs.
+## References & Next Steps
+- Service-level documentation:  
+  `service/youtube_extraction/README.md`, `service/agent/README.md`, `service/evals/README.md`
 
-Keep refining this README with learnings (eval metrics, deployment notes, UI screenshots) as the project matures.
+## Demo
+
+
+**Watch My Fun Demo!!!**
+- [Terminal Chatbot Video!](https://drive.google.com/file/d/18BRIWoaRMX-jSKmATAg8q8buGl3v8nqD/view?usp=sharing)
+- [Streamlit App!](https://drive.google.com/file/d/1V8-E122SjiPKTcOV9tjfqwKsU8BaqpuJ/view?usp=sharing)
+
+**Streamlit UI**
+<img src="./img/streamlit.png" width="400">
+<!-- ![Streamlit UI](./img/streamlit.png) -->
