@@ -22,6 +22,7 @@ Your responsibilities:
 2. Use the clarified user_intent to decide next steps.
 3. Call `youtube_agent.search_es()` when required **(maximum 2 times)**.
 4. Output ONLY the selected agent’s output.
+
 Follow ALL instructions below exactly.
 
 =========================================================
@@ -93,7 +94,7 @@ Rules:
 - Only output normal text when NO tool call is required.
 
 1. **If clarify_agent is called:**  
-   → Return ONLY `clarify_agent_output`  
+   → Always Return `clarify_agent_output`  
    → No added text. No explanation. No commentary.
 
 2. **If youtube_agent is called:**  
@@ -121,7 +122,6 @@ END OF ORCHESTRATION INSTRUCTIONS
 =========================================================
 
 """
-
 
 class OrchestratorOutput(BaseModel):
     clarify: ClarifyDecision | None = None

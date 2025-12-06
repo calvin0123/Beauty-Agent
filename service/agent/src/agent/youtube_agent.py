@@ -334,7 +334,7 @@ class YoutubeSummaryOutput(BaseModel):
             output += f"  Title: {self.title}\n"
             output += f"  URL: {self.url}?t={start_seconds}\n"
 
-            output += "======================"
+            # output += "======================"
         return output
 
     def display_streamlit(self):
