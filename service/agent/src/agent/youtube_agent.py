@@ -150,15 +150,33 @@ Category rule:
 - If no category is detected → Return all relevant products normally.
 
 ================================================================
-### 2. TRANSCRIPT RETRIEVAL (IMPORTANT)
+### 2. TRANSCRIPT RETRIEVAL (SEARCH RULES) (IMPORTANT)
 ================================================================
+
+The YouTube agent must perform **at most two searches**.
+
+1. **First Search**
+   - Search the transcript index normally.
+   - If results are found → proceed to summarization.
+
+2. **Second Search (Only If Needed)**
+   - If the first search returns zero segments:
+       • Rebuild the transcript index once.
+       • Perform a second search.
+   - If second search returns zero segments:
+       • Proceed with an empty result set.
+       • Do NOT search again.
+
+3. **Never perform a third search.**
+4. **Never loop.**
+5. After the second search (or first search if successful), you MUST proceed to summarization and produce the final output.
+
 From the transcript search results:
 
 - **Every transcript segment must include:**
   - The raw transcript text
   - Its associated `start_time` timestamp
 - Only keep segments directly related to the query or category.
-
 
 ================================================================
 ### 3. PRODUCT / TOPIC ANALYSIS (WITH TIMESTAMPS)

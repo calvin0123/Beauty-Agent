@@ -34,10 +34,15 @@ You ONLY perform routing and decision-making.
 ====================================================
 PRIMARY RULE — Cache First
 ====================================================
+
 Always check if the transcript for the video is in the cache **before doing anything else**.
+- Always calls `has_cached_transcript` to check.
 - If the transcript exists in cache → do NOT call chunk_transcript.
 - If the transcript does NOT exist in cache → always call chunk_transcript to generate and save the chunks.
-- After chunking, **call `list_cached_videos(youtuber)`** to return all available videos in the cache for this YouTuber.
+- At the end, always **call `list_cached_videos(youtuber)`** to return all available videos in the cache for this YouTuber.
+
+This step is REQUIRED in every execution.
+
 
 ====================================================
 1. QUERY UNDERSTANDING
@@ -144,7 +149,7 @@ class ClarifyDecision(BaseModel):
     )
     user_intent: str = Field(
         ...,
-        description="The goal of the user: e.g. 'find_product', 'recommendation', 'compare', 'video_question'.",
+        description="The goal of the user: e.g. 'add_data', 'find_product', 'recommendation', 'compare', 'video_question'.",
     )
     topic: Optional[str] = Field(
         None, description="Product or topic extracted from the user query."
@@ -168,6 +173,35 @@ class ClarifyDecision(BaseModel):
         description="List of cached videos (title, summary, url) to show user when no video_id provided.",
     )
 
+    def format_agent_output(self):
+        """
+        Return the full Clarify Agent output in a readable format.
+
+        Args:
+            decision (ClarifyDecision): The ClarifyDecision object returned by the age
+        """
+        output = ""
+        output += "=== Clarify Agent Output ===\n"
+        output += f"Intent       : {self.user_intent}"
+        output += f"YouTuber     : {self.youtuber}"
+        output += f"Video ID     : {self.video_id}"
+        output += f"Topic        : {self.topic}"
+        # print(f"Add Data     : {decision.add_to_cache}")
+        output += f"In Cache  : {self.in_cache}\n"
+        
+        if self.available_videos:
+            output += "Hey I can start answer your question!\nHere are Available Videos (metadata):\n"
+            for idx, video in enumerate(self.available_videos, start=1):
+                output += f"{idx}. Title  : {video.title}"
+                output += f"   Summary: {video.summary}"
+                output += f"   URL    : {video.url}\n"
+
+        else:
+            output += "No available videos to display."
+
+        return output
+
+
     def print_agent_output(self):
         """
         Print the full Clarify Agent output in a readable format.
@@ -185,7 +219,7 @@ class ClarifyDecision(BaseModel):
 
         # if decision.ask_for_video:
 
-        if True:
+        if self.available_videos:
             print(
                 "Hey I can start answer your question!\nHere are Available Videos (metadata):\n"
             )
@@ -264,7 +298,7 @@ def has_cached_transcript(
 
 
 def list_cached_videos(
-    youtuber: str, window_size: int = 15, step_size: int = 3
+    youtuber: str = 'heyitsmindy', window_size: int = 15, step_size: int = 3
 ) -> List[dict]:
     """
     List all cached video IDs for a given YouTuber.
