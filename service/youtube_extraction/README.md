@@ -17,10 +17,10 @@ Using the source from heyistsmindy youtube channel.
 | --- | --- | --- |
 | `src/youtube_extraction/youtube_parser.py` | Download video lists + transcripts. | `make run-get-videos` (wraps `uv run … youtube_parser.py`). Configure `GOOGLE_API_KEY`, `PROXY_USERNAME`, `PROXY_PASSWORD`. |
 | `src/youtube_extraction/youtube_process.py` | Defines processors, chunking helpers, and LLM summary schemas (Chinese + English variants). | Import the relevant class and call `chunk_transcript(video_id)`; invoked automatically by the Clarify Agent. |
-| `src/youtube_extraction/transcripts.py` | Legacy chunker with Deep Translator support; still used for experiments that need English-only content chunks. | Run via notebook or custom script when comparing chunking strategies. |
-| `src/youtube_extraction/search_tool.py` | Prototype MinSearch workflow (kept for reference). | `uv run … search_tool.py` (builds `.cache/search_tools_*`). |
 | `src/youtube_extraction/youtube_search.py` | Production search class using Elasticsearch + SentenceTransformers (with optional MinSearch fallback). | Imported by `service/agent/src/agent/youtube_agent.py`. Run `ensure_es_index` once, then `search_es(query)`. |
-| `src/youtube_extraction/utils.py` | Shared Pydantic schemas + translation helper that wraps `deep_translator`. | Imported where needed; no standalone entrypoint. |
+| `src/youtube_extraction/transcripts.py` | (Prototype) Legacy chunker with Deep Translator support; still used for experiments that need English-only content chunks. | Run via notebook or custom script when comparing chunking strategies. |
+| `src/youtube_extraction/search_tool.py` | (Prototype) MinSearch workflow (kept for reference). | `uv run … search_tool.py` (builds `.cache/search_tools_*`). |
+| `src/youtube_extraction/utils.py` | (Prototype) Shared Pydantic schemas + translation helper that wraps `deep_translator`. | Imported where needed; no standalone entrypoint. |
 
 ## Running the Pipeline
 1. **Set env vars**
