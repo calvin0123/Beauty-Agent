@@ -33,7 +33,7 @@ async def run_agent(q):
 
 async def main():
     gd = pd.read_csv(
-        "/Users/yenchunchen/Desktop/Project/health-agent/data/ground_truth/ground-truth-mindy.csv"
+        "data/ground_truth/ground-truth-mindy.csv"
     )
     ground_truth = gd.to_dict(orient="records")
 
