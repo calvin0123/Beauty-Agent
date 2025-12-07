@@ -2,10 +2,8 @@ import asyncio
 from typing import Any, Dict
 from jaxn import JSONParserHandler, StreamingJSONParser
 
-from service.youtube_extraction.src.youtube_extraction.youtube_search import (
-    YoutuberTranscriptSearcher,
-)
 from service.agent.src.agent import youtube_agent
+from service.agent.src.agent import orchestrator_agent
 import logfire
 from dotenv import load_dotenv
 
@@ -24,22 +22,42 @@ class SearchResultArticleHandler(JSONParserHandler):
     def on_field_end(
         self, path: str, field_name: str, value: str, parsed_value: Any = None
     ) -> None:
+        # ############# Clarify search #############
+        # print(f"Debug Youtube agent: {path} || Field Name {field_name}")
+        if path == "/clarify":
+            if path == "/clarify" and field_name == "youtuber":
+                print("\n=== Clarify Agent Output ===\n")
+                print(f"YouTuber     : {value}")
+            if path == "/clarify" and field_name == "user_intent":
+                print(f"Intent       : {value}")
+            if path == "/clarify" and field_name == "topic":
+                print(f"Topic        : {value}")
+            if path == "/clarify" and field_name == "video_id":
+                print(f"Video ID     : {value}\n")
+            if path == "/clarify" and field_name == "in_cache":
+                print(f"In Cache  : {value}\n")
+        # ############# Clarify search #############
+
+        # ############# Youtuber search #############
+
         # Handle top-level video fields
-        if path == "" and field_name == "title":
-            # print(f"# {value}\n")
-            self.title = value
-            print("=== Youtube Beauty Search Output ===")
-        if path == "" and field_name == "youtuber":
-            self.youtuber = value
-            # print(f"Youtuber: {value}")
-        elif path == "" and field_name == "url":
-            self.video_url = value
-            # print(f"URL: {value}")
-        elif path == "" and field_name == "category":
-            self.category = value
-            # print(f"Category: {value}\n")
+        if path == "/youtube" or path == "":
+            if field_name == "title":
+                # print(f"# {value}\n")
+                self.title = value
+                print("=== Youtube Beauty Search Output ===")
+            if field_name == "youtuber":
+                self.youtuber = value
+                # print(f"Youtuber: {value}")
+            elif field_name == "url":
+                self.video_url = value
+                # print(f"URL: {value}")
+            elif field_name == "category":
+                self.category = value
+                # print(f"Category: {value}\n")
         # elif path == "" and field_name == "summary":
         #     print(f"Summary:\n{value}\n")
+        # ############# Youtuber search #############
 
     def on_value_chunk(self, path: str, field_name: str, chunk: str) -> None:
         # TODO: how can i pring the recommendation output in stream
@@ -48,6 +66,17 @@ class SearchResultArticleHandler(JSONParserHandler):
     def on_array_item_end(
         self, path: str, field_name: str, item: Dict[str, Any] = None
     ) -> None:
+        # ############# Clarify #############
+        if field_name == "available_videos" and item is not None:
+            # print(
+            #     "Hey I can start answer your question!\nHere are Available Videos (metadata):\n"
+            # )
+            print(f"   Title  : {item.get('title')}")
+            print(f"   Summary: {item.get('summary')}")
+            print(f"   URL    : {item.get('url')}\n")
+        # ############# Clarify #############
+
+        # ############# Youtuber search #############
         if field_name == "products" and item is not None:
             # Print each product nicely
 
@@ -63,6 +92,7 @@ class SearchResultArticleHandler(JSONParserHandler):
                 print(f" Title: {self.title}")
                 print(f" URL:  {self.video_url}?t={self.time_to_seconds(start_time)}\n")
             print("======================\n")
+        # ############# Youtuber search #############
 
     @staticmethod
     def time_to_seconds(time_str: str) -> int:
@@ -75,12 +105,17 @@ class SearchResultArticleHandler(JSONParserHandler):
         return 0
 
 
-async def main():
+async def main(use_agent):
     user_input = "CLIO Pro Eye Palette Air Heritage Edition"
     user_input = "韓國推薦粉底液"
 
-    agent = youtube_agent.create_youtube_agent()
-    callback = youtube_agent.NamedCallback(agent)
+    if use_agent == "youtube":
+        agent = youtube_agent.create_youtube_agent()
+        callback = youtube_agent.NamedCallback(agent)
+    else:
+        user_input = "Help me understand  https://www.youtube.com/watch?v=KNR7lyrTThg from heyitsmindy"
+        agent = orchestrator_agent.create_orchestration_agent()
+        callback = youtube_agent.NamedCallback(agent)
 
     handler = SearchResultArticleHandler()
     parser = StreamingJSONParser(handler)
@@ -105,4 +140,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    use_agent = "youtube"
+    use_agent = "orchestrator"
+
+    # if use_agent == 'youtube':
+    asyncio.run(main(use_agent))

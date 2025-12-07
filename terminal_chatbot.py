@@ -1,3 +1,6 @@
+import json
+
+
 class StdOutputInterface:
     def input(self) -> str:
         """
@@ -59,9 +62,6 @@ class StdOutputInterface:
         print()
 
 
-import json
-
-
 class PydanticAIRunner:
     """Runner for Pydantic AI."""
 
@@ -69,7 +69,7 @@ class PydanticAIRunner:
         self.chat_interface = chat_interface
         self.agent = agent
 
-    async def run(self) -> None:
+    async def run(self, which_agent: str = "orchestrator") -> None:
         message_history = []
 
         while True:
@@ -81,7 +81,24 @@ class PydanticAIRunner:
             result = await self.agent.run(
                 user_prompt=user_input, message_history=message_history
             )
-            output = result.output.format_youtube_summary()
+
+            if which_agent == "youtube":
+                result.output.print_youtube_summary()
+                # output = result.output.format_youtube_summary()
+            else:
+                if result.output.clarify:
+                    # result.output.clarify.print_agent_output()
+                    clarify_output = result.output.clarify.format_agent_output()
+                    print("\n\n")
+                    self.chat_interface.display(clarify_output)
+
+                if result.output.youtube:
+                    # result.output.youtube.print_youtube_summary()
+                    product_recommend_output = (
+                        result.output.youtube.format_youtube_summary()
+                    )
+                    print("\n\n")
+                    self.chat_interface.display(product_recommend_output)
 
             messages = result.new_messages()
 
@@ -106,7 +123,7 @@ class PydanticAIRunner:
                             call.tool_name, json.dumps(call.args), result
                         )
                         if call.tool_name == "final_result":
-                            self.chat_interface.display(output)
+                            self.chat_interface.display(part.content)
 
             message_history.extend(messages)
 
@@ -114,13 +131,25 @@ class PydanticAIRunner:
 if __name__ == "__main__":
     from service.agent.src.agent.youtube_agent import (
         create_youtube_agent,
-        NamedCallback,
     )
+    from service.agent.src.agent.orchestrator_agent import create_orchestration_agent
+
     import asyncio
 
     chat_interface = StdOutputInterface()
-    youtube_agent = create_youtube_agent()
-    agent_runner = PydanticAIRunner(chat_interface=chat_interface, agent=youtube_agent)
+    agent = "youtube"
+    agent = "orchestrator"
+
+    if agent == "youtube":
+        youtube_agent = create_youtube_agent()
+        agent_runner = PydanticAIRunner(
+            chat_interface=chat_interface, agent=youtube_agent
+        )
+    else:
+        orchestrate_agent = create_orchestration_agent()
+        agent_runner = PydanticAIRunner(
+            chat_interface=chat_interface, agent=orchestrate_agent
+        )
 
     # youtube_callback = NamedCallback(youtube_agent)
-    asyncio.run(agent_runner.run())
+    asyncio.run(agent_runner.run(which_agent=agent))
