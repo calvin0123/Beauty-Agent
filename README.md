@@ -13,6 +13,7 @@ The agent can:
 ## Features
 - **Creator ingestion pipeline** – fetch YouTube uploads, download transcripts via Webshare proxies, summarize with OpenAI, and cache overlapping chunks for reuse.
 - **Clarify & retrieval agents** – a routing agent decides whether to fetch/index data, while the YouTube agent performs multilingual semantic search (Elasticsearch + SentenceTransformers) and returns product recommendations with timestamps.
+- **Orchestrator agent** – guarantees every request runs through Clarify first, then automatically chains into the YouTube agent (used by `main.py` and `terminal_chatbot.py`).
 - **Interactive surfaces** – CLI loop (`terminal_chatbot.py`) and Streamlit UI (`app.py`) powered by shared agent logic.
 - **Evaluation harness** – generate golden answers, replay agent runs, and judge outputs with a rubric (instruction following, answer quality, citation faithfulness).
 - **Monitoring-ready** – logs are structured and monitored using `logfire`
@@ -21,11 +22,11 @@ The agent can:
 ```
 health-agent/
 ├── Makefile                     # Canonical entrypoints (uv run …)
-├── app.py / terminal_chatbot.py # Streamlit + CLI frontends
-├── main.py                      # Sample orchestration (YouTube agent with streaming output)
+├── app.py / terminal_chatbot.py # Streamlit UI + CLI frontend (CLI uses the orchestrator stack)
+├── main.py                      # Sample orchestration script (calls the Orchestrator Agent)
 ├── service/
 │   ├── youtube_extraction/      # Data ingestion: parser, chunker, searcher
-│   ├── agent/                   # Clarify + YouTube agents
+│   ├── agent/                   # Clarify, YouTube, and Orchestrator agents
 │   └── evals/                   # Ground truth + judging pipelines
 ├── data/                        # Transcripts, ground-truth CSVs, eval pickles
 ├── .cache/                      # Chunked transcripts + search indexes
@@ -69,13 +70,14 @@ All workflows are wrapped in the `Makefile` (each target uses `uv run …` so th
 | Command | What it does |
 | --- | --- |
 | `make run-get-videos` | Downloads recent videos + transcripts for the configured creator. Triggers ingestion pipeline prerequisites. |
-| `make run-data-prep` | Automates the transcript ingestion for the configured creator. |
-| `make run-main` | Runs `main.py`, calling YouTube Agent once for a scripted prompt. |
-| `make run-terminal-app` | Launches the interactive CLI chatbot loop. |
+| `make run-data-prep` | End-to-end ingestion helper (fetch videos → chunk → create search index). |
+| `make run-main` | Runs `main.py`, which now executes the Orchestrator Agent (Clarify → YouTube) for a scripted prompt. |
+| `make run-terminal-app` | Launches the interactive CLI chatbot loop, backed by the Orchestrator Agent each turn. |
 | `make run-streamlit-app` | Starts the Streamlit UI for browsing recommendations. |
 | `make run-ground-truth` | Generates golden answers for evaluation (writes to `data/ground_truth/*.bin`). |
 | `make run-ground-truth-evals` | Scores agent outputs against the rubric and prints pass rates. |
 
+Both `main.py` and `terminal_chatbot.py` rely on `create_orchestration_agent()` so every user query automatically flows through Clarify → (optional) transcript chunking → YouTube search → structured answer.
 Consult individual service READMEs for additional context (custom arguments, helper scripts, etc.).
 
 ## Reproducing Results
