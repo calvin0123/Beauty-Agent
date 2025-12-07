@@ -1,6 +1,8 @@
 # YouTube Extraction Service
 
-Data-ingestion toolkit that fetches channel metadata, downloads transcripts, chunks them, and builds retrieval indexes for the Beauty/Health agent.
+Data-ingestion toolkit that fetches channel metadata, downloads transcripts, chunks them, and builds retrieval indexes for the Beauty agent.
+
+Using the source from heyistsmindy youtube channel.
 
 ## Workflow Overview
 1. **Fetch video metadata** – `YoutubeParser.get_all_video_id` hits the YouTube Data API and stores the latest uploads under `data/<youtuber>/videos/`.

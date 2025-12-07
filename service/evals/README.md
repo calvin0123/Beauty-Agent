@@ -53,3 +53,6 @@ Extend the rubric by editing `CHECK_DESCRIPTIONS` and the `CheckName` enum; the 
 - Always run evaluations with the same `OPENAI_API_KEY` tier/model you plan to ship; rubric behavior can change across models.
 - Store multiple `.bin` snapshots (timestamped) so you can compare revisions when prompts or retrieval strategies change.
 - Pair quantitative checklist scores with manual spot checks (look at the saved `messages` field) to ensure failures are actionable.
+
+## Notes
+- Currently only testing on the `youtuber_agent`
